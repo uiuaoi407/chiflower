@@ -3,12 +3,11 @@ let actionCount = 0;
 let isMedicinePhase = false;
 
 const flowerObj = document.getElementById("flower-object");
-const windowZone = document.getElementById("window-zone");
 const dialogueBox = document.getElementById("dialogue-box");
 const dayIndicator = document.getElementById("day-indicator");
 const actionPanel = document.getElementById("action-panel");
-const avatarImg = document.getElementById("avatar-img");
-const avatarSpeech = document.getElementById("avatar-speech");
+const characterBubble = document.getElementById("character-bubble");
+const characterContainer = document.getElementById("character-avatar-container");
 const nightScreen = document.getElementById("night-screen");
 const nightText = document.getElementById("night-text");
 const endingScreen = document.getElementById("ending-screen");
@@ -24,25 +23,29 @@ function initDay() {
     isMedicinePhase = false;
     dayIndicator.innerText = `DAY ${currentDay} / 3`;
 
+    // 화분 위치 원복
+    flowerObj.style.left = "20px";
+    flowerObj.style.top = "auto";
+    flowerObj.style.bottom = "15px";
+
     if (currentDay === 1) {
         flowerObj.innerText = "🌱";
-        setAvatar("🧐", "아직은 씨앗이라 조심스럽군.");
-        dialogueBox.innerText = "DAY 1: 씨앗을 심었다. 물을 주고 창가로 드래그해 햇빛을 쬐어주자.";
+        setComment("아직은 씨앗이군. 조심스럽게 다루자.");
+        dialogueBox.innerText = "DAY 1: 씨앗을 심었다. 물을 주고 창가로 끌어가 햇빛을 쬐어주자.";
     } else if (currentDay === 2) {
         flowerObj.innerText = "🌿";
-        setAvatar("✨", "오, 싹이 텄어! 제법 그럴듯한데?");
-        dialogueBox.innerText = "DAY 2: 싹이 텄다! 관리를 소홀히 하면 안 된다.";
+        setComment("오, 싹이 제법 자랐어!");
+        dialogueBox.innerText = "DAY 2: 싹이 텄다! 빼먹지 말고 관리하자.";
     } else if (currentDay === 3) {
         flowerObj.innerText = "🌸";
-        setAvatar("😳", "꽃봉오리야... 조금만 더 힘내자.");
-        dialogueBox.innerText = "DAY 3: 마지막 날이다. 독초 함정을 조심하며 탕약을 만들자.";
+        setComment("꽃봉오리야... 마지막까지 방심 금물.");
+        dialogueBox.innerText = "DAY 3: 마지막 날! 독초 함정을 조심하며 탕약을 만들자.";
     }
     renderDefaultControls();
 }
 
-function setAvatar(emoji, text) {
-    avatarImg.innerText = emoji;
-    avatarSpeech.innerText = text;
+function setComment(text) {
+    characterBubble.innerText = text;
 }
 
 function renderDefaultControls() {
@@ -52,98 +55,106 @@ function renderDefaultControls() {
     `;
 }
 
-// 물 주기 액션
 function doAction(type) {
     if (isMedicinePhase) return;
     if (type === 'water') {
-        setAvatar("💧", "촉촉하게 물을 주었다.");
-        dialogueBox.innerText = "졸졸졸... 물을 주어 흙이 촉촉해졌다.";
+        setComment("촉촉하게 물 주기 완료!");
+        dialogueBox.innerText = "졸졸졸... 화분에 물을 주어 흙이 촉촉해졌다.";
         actionCount++;
         checkDayProgress();
     }
 }
 
-// 드래그 앤 드롭으로 창가에 갖다 놨을 때 햇빛 주기 처리
+// 📱 스마트폰 터치 & 마우스 드래그 완벽 대응 로직
 let isDragging = false;
-let offsetX, offsetY;
+let startX, startY, initialLeft, initialTop;
 
-flowerObj.addEventListener('mousedown', startDrag);
-flowerObj.addEventListener('touchstart', startDrag, {passive: false});
+flowerObj.addEventListener('pointerdown', startDrag);
 
 function startDrag(e) {
     if (isMedicinePhase) return;
     isDragging = true;
-    let clientX = e.clientX || e.touches[0].clientX;
-    let clientY = e.clientY || e.touches[0].clientY;
+    flowerObj.setPointerCapture(e.pointerId);
+    
     let rect = flowerObj.getBoundingClientRect();
-    offsetX = clientX - rect.left;
-    offsetY = clientY - rect.top;
+    let parentRect = document.getElementById("room-area").getBoundingClientRect();
+    
+    startX = e.clientX;
+    startY = e.clientY;
+    initialLeft = rect.left - parentRect.left;
+    initialTop = rect.top - parentRect.top;
 }
 
-document.addEventListener('mousemove', drag);
-document.addEventListener('touchmove', drag, {passive: false});
-
+flowerObj.addEventListener('pointermove', drag);
 function drag(e) {
     if (!isDragging) return;
     e.preventDefault();
-    let clientX = e.clientX || e.touches[0].clientX;
-    let clientY = e.clientY || e.touches[0].clientY;
     
-    let containerRect = document.getElementById("room-area").getBoundingClientRect();
+    let dx = e.clientX - startX;
+    let dy = e.clientY - startY;
     
-    flowerObj.style.position = 'absolute';
-    flowerObj.style.left = (clientX - containerRect.left - offsetX) + 'px';
-    flowerObj.style.top = (clientY - containerRect.top - offsetY) + 'px';
+    flowerObj.style.bottom = "auto";
+    flowerObj.style.left = (initialLeft + dx) + 'px';
+    flowerObj.style.top = (initialTop + dy) + 'px';
 }
 
-document.addEventListener('mouseup', endDrag);
-document.addEventListener('touchend', endDrag);
+flowerObj.addEventListener('pointerup', endDrag);
+flowerObj.addEventListener('pointercancel', endDrag);
 
 function endDrag(e) {
     if (!isDragging) return;
     isDragging = false;
 
-    // 창가 영역(window-zone)에 들어갔는지 체크
     let flowerRect = flowerObj.getBoundingClientRect();
-    let windowRect = windowZone.getBoundingClientRect();
+    let roomRect = document.getElementById("room-area").getBoundingClientRect();
+    
+    // 오른쪽 창가 존 영역에 도달했는지 판정 (오른쪽 35% 구간)
+    let windowZoneThreshold = roomRect.right - (roomRect.width * 0.4);
 
-    if (flowerRect.left >= windowRect.left - 20 && flowerRect.right <= windowRect.right + 20) {
-        // 햇빛 주기 성공!
-        setAvatar("☀️", "따스한 햇빛을 듬뿍 먹는 중!");
-        dialogueBox.innerText = "창가에 두어 햇빛을 쬐었다! 광합성 완료 ☀️";
+    if (flowerRect.left >= windowZoneThreshold) {
+        // 햇빛 주기 성공! 캐릭터가 꽃쪽으로 이동하며 감탄
+        setComment("햇빛 듬뿍! 광합성 굿 ☀️");
+        dialogueBox.innerText = "창가에 두어 따스한 햇빛을 쬐었다!";
         actionCount++;
         
-        // 원위치로 살짝 돌려놓기
-        flowerObj.style.left = 'auto';
-        flowerObj.style.top = 'auto';
+        // 화분 위치 제자리 복귀
+        flowerObj.style.left = "20px";
+        flowerObj.style.top = "auto";
+        flowerObj.style.bottom = "15px";
+        
+        // 캐릭터가 잠시 꽃 쪽으로 다가가는 모션 연출
+        characterContainer.style.right = "120px";
+        setTimeout(() => { characterContainer.style.right = "40px"; }, 1000);
+
         checkDayProgress();
     } else {
         // 창가가 아니면 제자리로 복귀
-        flowerObj.style.left = 'auto';
-        flowerObj.style.top = 'auto';
-        setAvatar("🤔", "여긴 햇빛이 잘 안 드는데...");
+        setComment("여긴 그늘인데... 창가로 가져가야 해.");
+        flowerObj.style.left = "20px";
+        flowerObj.style.top = "auto";
+        flowerObj.style.bottom = "15px";
     }
 }
 
 // 탕약 미니게임
 function openMedicineMenu() {
     isMedicinePhase = true;
-    setAvatar("🧪", "비율을 신중하게 맞춰야 해...");
+    setComment("비율을 조심하자...");
     
     if (currentDay === 1) {
-        dialogueBox.innerText = "DAY 1 탕약 제조: [1] 약초 ➡️ [2] 잎";
+        dialogueBox.innerText = "DAY 1 탕약: [1] 약초 ➡️ [2] 잎";
         actionPanel.innerHTML = `
             <button class="game-btn" onclick="selectMedicine('herb1', 1)">🌿 약초</button>
             <button class="game-btn" onclick="selectMedicine('leaf1', 1)">🍃 잎</button>
         `;
     } else if (currentDay === 2) {
-        dialogueBox.innerText = "DAY 2 탕약 제조: [1] 약초 ➡️ [2] 꽃잎";
+        dialogueBox.innerText = "DAY 2 탕약: [1] 약초 ➡️ [2] 꽃잎";
         actionPanel.innerHTML = `
             <button class="game-btn" onclick="selectMedicine('herb2', 2)">🌿 약초</button>
             <button class="game-btn" onclick="selectMedicine('petal2', 2)">🌸 꽃잎</button>
         `;
     } else if (currentDay === 3) {
-        dialogueBox.innerText = "DAY 3 최종 탕약: 엇... 독초가 섞여 있다!";
+        dialogueBox.innerText = "DAY 3 최종 탕약: 독초가 섞여 있다! 조심해!";
         actionPanel.innerHTML = `
             <button class="game-btn" onclick="selectMedicine('herb3', 3)">🌿 안전 약초</button>
             <button class="game-btn danger-btn" onclick="selectMedicine('poison3', 3)">☠️ 수상한 독초</button>
@@ -164,8 +175,8 @@ function selectMedicine(choice, day) {
     } else if (day === 3) {
         if (choice === 'poison3') {
             flowerObj.innerText = "💀";
-            setAvatar("😱", "……윽! 독초였다니?!");
-            dialogueBox.innerText = "☠️ 독초를 넣었다! 꽃이 시들었다... 정신 차리고 다시!";
+            setComment("억! 독초였다니보기?! 😱");
+            dialogueBox.innerText = "☠️ 독초를 넣었다! 꽃이 잠시 시들었다... 정신 차리자!";
             setTimeout(() => {
                 flowerObj.innerText = "🌸";
                 openMedicineMenu();
@@ -180,7 +191,7 @@ function selectMedicine(choice, day) {
 
 function successMedicine() {
     step = 0;
-    setAvatar("✨", "탕약 완성! 잘 자라거라.");
+    setComment("완벽해! 잘 자라는군.");
     dialogueBox.innerText = "🧪 탕약 완성 및 투입 성공!";
     actionCount++;
     isMedicinePhase = false;
@@ -190,6 +201,7 @@ function successMedicine() {
 
 function failMedicine(msg) {
     step = 0;
+    setComment("어라...? 실패다.");
     dialogueBox.innerText = `${msg} 다시 도전하자.`;
     setTimeout(() => openMedicineMenu(), 1500);
 }
@@ -213,7 +225,7 @@ function nextDay() {
 
 function triggerEnding() {
     flowerObj.innerText = "🌺";
-    setAvatar("😊", "드디어 피웠구나...");
+    setComment("드디어 형님께 드릴 꽃이 피었다... 😊");
     endingScreen.style.display = "flex";
     endingText.innerHTML = `
         <strong>궁원치의 비밀 화원 — COMPLETE</strong><br><br>
