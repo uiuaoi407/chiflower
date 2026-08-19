@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>궁원치의 비밀 화원 — 리뉴얼 버전</title>
+    <title>궁원치의 비밀 화원 — 완전판</title>
     
     <script>
         document.addEventListener('contextmenu', event => event.preventDefault());
@@ -16,100 +16,103 @@
 
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #111; color: white; text-align: center; margin: 0; overflow: hidden; touch-action: none; }
-        h1 { margin: 8px 0; font-size: 16px; color: #ff79c6; }
+        h1 { margin: 6px 0; font-size: 15px; color: #ff79c6; }
         
         #game-container { 
-            position: relative; width: 90vw; max-width: 390px; height: 68vh; 
-            background: linear-gradient(to bottom, #2c3e50, #1a1a1a); margin: 0 auto 8px auto; border: 3px solid #555; border-radius: 12px; overflow: hidden; 
-            display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 12px; box-sizing: border-box;
+            position: relative; width: 92vw; max-width: 390px; height: 72vh; 
+            background: linear-gradient(to bottom, #1f2937, #111); margin: 0 auto 5px auto; border: 3px solid #555; border-radius: 12px; overflow: hidden; 
+            display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 10px; box-sizing: border-box;
         }
 
         #top-bar { display: flex; justify-content: space-between; width: 100%; align-items: center; z-index: 5; }
-        #day-indicator { font-size: 14px; font-weight: bold; color: #f1c40f; background: rgba(0,0,0,0.6); padding: 4px 12px; border-radius: 15px; }
+        #day-indicator { font-size: 13px; font-weight: bold; color: #f1c40f; background: rgba(0,0,0,0.7); padding: 3px 10px; border-radius: 12px; }
         
-        /* 방 내부 공간 및 창가 영역 */
-        #room-area {
-            position: relative; width: 100%; height: 45%; 
-            background: rgba(0,0,0,0.3); border: 2px dashed rgba(255,255,255,0.2); border-radius: 8px;
-            display: flex; justify-content: space-around; align-items: center; overflow: hidden;
-        }
-
-        /* 창가 (햇빛 주는 곳) */
-        .window-zone {
-            width: 40%; height: 90%; border-right: 2px solid rgba(255,255,255,0.15);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: rgba(241, 196, 15, 0.05); position: relative;
-        }
-        .window-zone::before { content: "☀️ 창가 (햇빛존)"; font-size: 10px; color: #f1c40f; position: absolute; top: 5px; }
-
-        /* 화분/꽃 아이템 (드래그 가능) */
-        #flower-object {
-            font-size: 55px; cursor: grab; z-index: 10; transition: transform 0.2s;
-            user-select: none; position: absolute;
-        }
-        #flower-object:active { cursor: grabbing; }
-
-        /* 궁원치 캐릭터/짤방 영역 */
-        #character-avatar {
-            position: absolute; bottom: 8px; left: 10px; display: flex; align-items: center; gap: 6px;
-            background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 10px; border: 1px solid #666;
-            z-index: 6;
-        }
-        #avatar-img { font-size: 28px; }
-        #avatar-speech { font-size: 11px; color: #ddd; text-align: left; max-width: 170px; }
-
+        /* 상단에 배치한 궁원치 대사 박스 (클릭 방해 원천 차단) */
         #dialogue-box { 
-            width: 100%; background: rgba(0,0,0,0.8); border: 2px solid #555; border-radius: 8px; 
-            padding: 8px; font-size: 12px; line-height: 1.3; min-height: 40px; box-sizing: border-box; color: #ddd;
+            width: 100%; background: rgba(0,0,0,0.85); border: 1px solid #666; border-radius: 6px; 
+            padding: 6px 8px; font-size: 11px; line-height: 1.3; color: #ddd; box-sizing: border-box; text-align: left;
         }
 
+        /* 방 내부 & 창가 공간 (꽃과 캐릭터가 활동하는 곳) */
+        #room-area {
+            position: relative; width: 100%; height: 42%; 
+            background: rgba(0,0,0,0.4); border: 2px dashed rgba(255,255,255,0.25); border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* 창가 햇빛존 (오른쪽 또는 왼쪽 배치) */
+        .window-zone {
+            position: absolute; right: 0; top: 0; width: 35%; height: 100%; 
+            border-left: 2px solid rgba(255,255,255,0.2);
+            background: rgba(241, 196, 15, 0.08); display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: #f1c40f; font-weight: bold; pointer-events: none;
+        }
+
+        /* 드래그 가능한 꽃 화분 */
+        #flower-object {
+            position: absolute; bottom: 15px; left: 20px; font-size: 45px; cursor: grab; z-index: 10;
+            user-select: none; touch-action: none;
+        }
+
+        /* 돌아다니는 궁원치 캐릭터 이미지 (1.jpg 연동) */
+        #character-avatar-container {
+            position: absolute; bottom: 15px; right: 40px; display: flex; flex-direction: column; align-items: center; z-index: 8; pointer-events: none;
+            transition: all 0.5s ease;
+        }
+        #character-img {
+            width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ff79c6; object-fit: cover; background: #333;
+        }
+        #character-bubble {
+            font-size: 9px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 6px; color: #ffeb3b; margin-top: 2px; white-space: nowrap;
+        }
+
+        /* 하단 액션 버튼 패널 */
         #action-panel { display: flex; gap: 6px; width: 100%; justify-content: center; flex-wrap: wrap; }
         .game-btn { 
-            padding: 8px 12px; font-size: 12px; cursor: pointer; background: #2980b9; color: white; 
+            padding: 8px 10px; font-size: 12px; cursor: pointer; background: #2980b9; color: white; 
             border: none; border-radius: 6px; font-weight: bold; flex: 1; min-width: 70px;
         }
         .game-btn:active { background: #1f618d; }
         .danger-btn { background: #c0392b; }
 
-        #watermark { position: absolute; bottom: 4px; right: 8px; color: rgba(255, 255, 255, 0.4); font-size: 9px; pointer-events: none; }
+        #watermark { position: absolute; bottom: 3px; right: 6px; color: rgba(255, 255, 255, 0.35); font-size: 8px; pointer-events: none; }
 
         .screen-overlay { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.88);
             display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; padding: 20px; box-sizing: border-box;
         }
-        .screen-overlay h2 { font-size: 20px; color: #f39c12; margin-bottom: 8px; }
-        .screen-overlay p { font-size: 12px; line-height: 1.4; color: #ccc; margin-bottom: 15px; }
-        .start-btn { padding: 10px 30px; font-size: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .screen-overlay h2 { font-size: 18px; color: #f39c12; margin-bottom: 6px; }
+        .screen-overlay p { font-size: 11px; line-height: 1.4; color: #ccc; margin-bottom: 12px; }
+        .start-btn { padding: 10px 25px; font-size: 14px; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <h1>🌿 궁원치의 비밀 화원 (리뉴얼) 🌿</h1>
+    <h1>🌿 궁원치의 비밀 화원 🌿</h1>
 
     <div id="game-container">
         <div id="top-bar">
             <div id="day-indicator">DAY 1 / 3</div>
-            <div style="font-size: 11px; color: #aaa;">💡 꽃을 창가로 드래그해보세요!</div>
+            <div style="font-size: 10px; color: #aaa;">💡 화분을 창가로 드래그!</div>
         </div>
 
-        <!-- 방 내부 & 창가 공간 -->
+        <!-- 상단 대사 박스 (클릭 방해 없음) -->
+        <div id="dialogue-box">씨앗을 심었다. 정성을 다해 키워보자.</div>
+
+        <!-- 방 공간 & 창가 & 캐릭터 & 꽃 -->
         <div id="room-area">
-            <div class="window-zone" id="window-zone"></div>
-            <div style="width: 60%; height: 100%; display: flex; align-items: center; justify-content: center;"></div>
+            <div class="window-zone">☀️ 창가 햇빛존</div>
+            
+            <!-- 사용자가 넣을 1.jpg 캐릭터 사진 영역 -->
+            <div id="character-avatar-container">
+                <img id="character-img" src="1.jpg" alt="궁원치">
+                <div id="character-bubble">음... 잘 자라려나?</div>
+            </div>
+
             <!-- 드래그할 꽃 화분 -->
             <div id="flower-object">🌱</div>
         </div>
 
-        <!-- 궁원치 캐릭터 짤방/아바타 공간 -->
-        <div id="character-avatar">
-            <div id="avatar-img">🧐</div>
-            <div id="avatar-speech">음... 어떻게 키워야 잘 자란다고 소문이 날까.</div>
-        </div>
-
-        <div id="dialogue-box">
-            방 안에서 씨앗을 심었다. 정성을 다해 돌봐주자.
-        </div>
-
-        <!-- 액션 버튼 -->
+        <!-- 하단 조작 버튼 -->
         <div id="action-panel">
             <button class="game-btn" onclick="doAction('water')">💧 물 주기</button>
             <button class="game-btn" onclick="openMedicineMenu()">🧪 탕약 만들기</button>
@@ -120,7 +123,7 @@
         <!-- 시작 화면 -->
         <div id="start-screen" class="screen-overlay">
             <h2>궁원치의 비밀 화원</h2>
-            <p>방 안에서 꽃을 키우고, 창가로 직접 드래그해서 햇빛을 쬐어주세요!<br>형님에게 줄 최고의 꽃을 피우는 3일 간의 대장정.</p>
+            <p>손가락 터치로 화분을 창가로 드래그해 햇빛을 쬐어주세요!<br>형님에게 줄 최고의 꽃을 피우는 3일 간의 대장정.</p>
             <button class="start-btn" onclick="startGame()">입장하기</button>
         </div>
 
