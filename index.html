@@ -3,23 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>궁원치의 비밀 화원 — 완전판</title>
-    
-    <script>
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        document.addEventListener('keydown', event => {
-            if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key === 'I')) {
-                event.preventDefault();
-            }
-        });
-    </script>
+    <title>궁원치의 비밀 화원 — 미니게임 통합판</title>
 
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #111; color: white; text-align: center; margin: 0; overflow: hidden; touch-action: none; }
         h1 { margin: 6px 0; font-size: 15px; color: #ff79c6; }
         
         #game-container { 
-            position: relative; width: 92vw; max-width: 390px; height: 72vh; 
+            position: relative; width: 92vw; max-width: 390px; height: 74vh; 
             background: linear-gradient(to bottom, #1f2937, #111); margin: 0 auto 5px auto; border: 3px solid #555; border-radius: 12px; overflow: hidden; 
             display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 10px; box-sizing: border-box;
         }
@@ -27,20 +18,19 @@
         #top-bar { display: flex; justify-content: space-between; width: 100%; align-items: center; z-index: 5; }
         #day-indicator { font-size: 13px; font-weight: bold; color: #f1c40f; background: rgba(0,0,0,0.7); padding: 3px 10px; border-radius: 12px; }
         
-        /* 상단에 배치한 궁원치 대사 박스 (클릭 방해 원천 차단) */
+        /* 상단 대사 박스 */
         #dialogue-box { 
             width: 100%; background: rgba(0,0,0,0.85); border: 1px solid #666; border-radius: 6px; 
             padding: 6px 8px; font-size: 11px; line-height: 1.3; color: #ddd; box-sizing: border-box; text-align: left;
         }
 
-        /* 방 내부 & 창가 공간 (꽃과 캐릭터가 활동하는 곳) */
+        /* 방 공간 & 창가 */
         #room-area {
             position: relative; width: 100%; height: 42%; 
             background: rgba(0,0,0,0.4); border: 2px dashed rgba(255,255,255,0.25); border-radius: 8px;
             overflow: hidden;
         }
 
-        /* 창가 햇빛존 (오른쪽 또는 왼쪽 배치) */
         .window-zone {
             position: absolute; right: 0; top: 0; width: 35%; height: 100%; 
             border-left: 2px solid rgba(255,255,255,0.2);
@@ -50,11 +40,11 @@
 
         /* 드래그 가능한 꽃 화분 */
         #flower-object {
-            position: absolute; bottom: 15px; left: 20px; font-size: 45px; cursor: grab; z-index: 10;
+            position: absolute; bottom: 15px; left: 20px; font-size: 40px; cursor: grab; z-index: 10;
             user-select: none; touch-action: none;
         }
 
-        /* 돌아다니는 궁원치 캐릭터 이미지 (1.jpg 연동) */
+        /* 1.jpg 캐릭터 사진 영역 (메인 육성 화면용) */
         #character-avatar-container {
             position: absolute; bottom: 15px; right: 40px; display: flex; flex-direction: column; align-items: center; z-index: 8; pointer-events: none;
             transition: all 0.5s ease;
@@ -66,14 +56,39 @@
             font-size: 9px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 6px; color: #ffeb3b; margin-top: 2px; white-space: nowrap;
         }
 
-        /* 하단 액션 버튼 패널 */
+        /* 🧪 탕약 미니게임 전용 화면 스타일 */
+        #minigame-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 25, 0.95); display: none; flex-direction: column; justify-content: space-between; align-items: center;
+            padding: 10px; box-sizing: border-box; z-index: 20; overflow: hidden; touch-action: none;
+        }
+        #minigame-hud {
+            width: 100%; display: flex; justify-content: space-between; font-size: 11px; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 6px; box-sizing: border-box;
+        }
+        #drop-field {
+            position: relative; width: 100%; flex-grow: 1; border: 1px dashed rgba(255,255,255,0.2); border-radius: 6px; margin: 6px 0; overflow: hidden; background: radial-gradient(circle, #252836 0%, #111 100%);
+        }
+        /* 떨어지는 약재 아이템 */
+        .herb-item {
+            position: absolute; top: -30px; font-size: 22px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; user-select: none;
+        }
+        /* 바구니를 든 2.jpg 캐릭터 */
+        #basket-player {
+            position: absolute; bottom: 10px; left: 50% / 100px; transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; width: 60px; cursor: pointer;
+        }
+        #basket-img {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid #2ecc71; object-fit: cover; background: #333;
+        }
+        #basket-icon { font-size: 16px; margin-top: -8px; background: rgba(0,0,0,0.8); padding: 1px 6px; border-radius: 10px; border: 1px solid #2ecc71; }
+
+        /* 조작 버튼 패널 */
         #action-panel { display: flex; gap: 6px; width: 100%; justify-content: center; flex-wrap: wrap; }
         .game-btn { 
             padding: 8px 10px; font-size: 12px; cursor: pointer; background: #2980b9; color: white; 
             border: none; border-radius: 6px; font-weight: bold; flex: 1; min-width: 70px;
         }
         .game-btn:active { background: #1f618d; }
-        .danger-btn { background: #c0392b; }
 
         #watermark { position: absolute; bottom: 3px; right: 6px; color: rgba(255, 255, 255, 0.35); font-size: 8px; pointer-events: none; }
 
@@ -95,46 +110,54 @@
             <div style="font-size: 10px; color: #aaa;">💡 화분을 창가로 드래그!</div>
         </div>
 
-        <!-- 상단 대사 박스 (클릭 방해 없음) -->
         <div id="dialogue-box">씨앗을 심었다. 정성을 다해 키워보자.</div>
 
-        <!-- 방 공간 & 창가 & 캐릭터 & 꽃 -->
         <div id="room-area">
             <div class="window-zone">☀️ 창가 햇빛존</div>
             
-            <!-- 사용자가 넣을 1.jpg 캐릭터 사진 영역 -->
             <div id="character-avatar-container">
                 <img id="character-img" src="1.jpg" alt="궁원치">
                 <div id="character-bubble">음... 잘 자라려나?</div>
             </div>
 
-            <!-- 드래그할 꽃 화분 -->
             <div id="flower-object">🌱</div>
         </div>
 
-        <!-- 하단 조작 버튼 -->
         <div id="action-panel">
             <button class="game-btn" onclick="doAction('water')">💧 물 주기</button>
-            <button class="game-btn" onclick="openMedicineMenu()">🧪 탕약 만들기</button>
+            <button class="game-btn" onclick="startMedicineMiniGame()">🧪 탕약 달이기</button>
+        </div>
+
+        <!-- 🧪 탕약 받기 미니게임 화면 영역 (2.jpg 연동) -->
+        <div id="minigame-screen">
+            <div id="minigame-hud">
+                <span id="target-order-text" style="color: #f1c40f; font-weight: bold;">목표 순서: 대기 중</span>
+                <span id="score-text" style="color: #2ecc71;">성공: 0 / 10</span>
+            </div>
+            <div id="drop-field">
+                <!-- 바구니를 든 궁원치 (2.jpg 연동) -->
+                <div id="basket-player">
+                    <img id="basket-img" src="2.jpg" alt="궁원치 바구니">
+                    <div id="basket-icon">🧺</div>
+                </div>
+            </div>
+            <div style="font-size: 9px; color: #aaa;">💡 화면을 좌우로 터치/드래그하여 순서에 맞는 약재를 받으세요!</div>
         </div>
 
         <div id="watermark">모카크림의 밤산책</div>
 
-        <!-- 시작 화면 -->
         <div id="start-screen" class="screen-overlay">
             <h2>궁원치의 비밀 화원</h2>
             <p>손가락 터치로 화분을 창가로 드래그해 햇빛을 쬐어주세요!<br>형님에게 줄 최고의 꽃을 피우는 3일 간의 대장정.</p>
             <button class="start-btn" onclick="startGame()">입장하기</button>
         </div>
 
-        <!-- 밤 오버레이 -->
         <div id="night-screen" class="screen-overlay" style="display: none;">
             <h2>🌙 밤이 깊어졌습니다...</h2>
             <p id="night-text">오늘 하루의 관리를 마쳤습니다.</p>
             <button class="start-btn" onclick="nextDay()">다음 날 아침으로</button>
         </div>
 
-        <!-- 엔딩 오버레이 -->
         <div id="ending-screen" class="screen-overlay" style="display: none;">
             <h2>🌺 COMPLETE 🌺</h2>
             <p id="ending-text">만개한 꽃을 꺾어 들고 형님에게 향한다...</p>
@@ -142,6 +165,336 @@
         </div>
     </div>
 
-    <script src="game.js"></script>
+    <script>
+        let currentDay = 1;
+        let actionCount = 0;
+
+        const flowerObj = document.getElementById("flower-object");
+        const dialogueBox = document.getElementById("dialogue-box");
+        const dayIndicator = document.getElementById("day-indicator");
+        const actionPanel = document.getElementById("action-panel");
+        const characterBubble = document.getElementById("character-bubble");
+        const characterContainer = document.getElementById("character-avatar-container");
+        const nightScreen = document.getElementById("night-screen");
+        const nightText = document.getElementById("night-text");
+        const endingScreen = document.getElementById("ending-screen");
+        const endingText = document.getElementById("ending-text");
+
+        function startGame() {
+            document.getElementById("start-screen").style.display = "none";
+            initDay();
+        }
+
+        function initDay() {
+            actionCount = 0;
+            dayIndicator.innerText = `DAY ${currentDay} / 3`;
+
+            flowerObj.style.left = "20px";
+            flowerObj.style.top = "auto";
+            flowerObj.style.bottom = "15px";
+
+            if (currentDay === 1) {
+                flowerObj.innerText = "🌱";
+                setComment("아직은 씨앗이군. 조심스럽게 다루자.");
+                dialogueBox.innerText = "DAY 1: 씨앗을 심었다. 물을 주고 창가로 끌어가 햇빛을 쬐어주자.";
+            } else if (currentDay === 2) {
+                flowerObj.innerText = "🌿";
+                setComment("오, 싹이 제법 자랐어!");
+                dialogueBox.innerText = "DAY 2: 싹이 텄다! 빼먹지 말고 관리하자.";
+            } else if (currentDay === 3) {
+                flowerObj.innerText = "🌸";
+                setComment("꽃봉오리야... 마지막까지 방심 금물.");
+                dialogueBox.innerText = "DAY 3: 마지막 날! 완벽한 탕약을 만들어 꽃을 피우자.";
+            }
+            renderDefaultControls();
+        }
+
+        function setComment(text) {
+            characterBubble.innerText = text;
+        }
+
+        function renderDefaultControls() {
+            actionPanel.innerHTML = `
+                <button class="game-btn" onclick="doAction('water')">💧 물 주기</button>
+                <button class="game-btn" onclick="startMedicineMiniGame()">🧪 탕약 달이기</button>
+            `;
+        }
+
+        function doAction(type) {
+            if (type === 'water') {
+                setComment("촉촉하게 물 주기 완료!");
+                dialogueBox.innerText = "졸졸졸... 화분에 물을 주어 흙이 촉촉해졌다.";
+                actionCount++;
+                checkDayProgress();
+            }
+        }
+
+        // --- 메인 화면: 꽃 화분 드래그 로직 ---
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        flowerObj.addEventListener('pointerdown', startDrag);
+
+        function startDrag(e) {
+            isDragging = true;
+            flowerObj.setPointerCapture(e.pointerId);
+            
+            let rect = flowerObj.getBoundingClientRect();
+            let parentRect = document.getElementById("room-area").getBoundingClientRect();
+            
+            startX = e.clientX;
+            startY = e.clientY;
+            initialLeft = rect.left - parentRect.left;
+            initialTop = rect.top - parentRect.top;
+        }
+
+        flowerObj.addEventListener('pointermove', drag);
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+            
+            flowerObj.style.bottom = "auto";
+            flowerObj.style.left = (initialLeft + dx) + 'px';
+            flowerObj.style.top = (initialTop + dy) + 'px';
+        }
+
+        flowerObj.addEventListener('pointerup', endDrag);
+        flowerObj.addEventListener('pointercancel', endDrag);
+
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+
+            let flowerRect = flowerObj.getBoundingClientRect();
+            let roomRect = document.getElementById("room-area").getBoundingClientRect();
+            let windowZoneThreshold = roomRect.right - (roomRect.width * 0.4);
+
+            if (flowerRect.left >= windowZoneThreshold) {
+                setComment("햇빛 듬뿍! 광합성 굿 ☀️");
+                dialogueBox.innerText = "창가에 두어 따스한 햇빛을 쬐었다!";
+                actionCount++;
+                
+                flowerObj.style.left = "20px";
+                flowerObj.style.top = "auto";
+                flowerObj.style.bottom = "15px";
+                
+                characterContainer.style.right = "120px";
+                setTimeout(() => { characterContainer.style.right = "40px"; }, 1000);
+
+                checkDayProgress();
+            } else {
+                setComment("여긴 그늘인데... 창가로 가져가야 해.");
+                flowerObj.style.left = "20px";
+                flowerObj.style.top = "auto";
+                flowerObj.style.bottom = "15px";
+            }
+        }
+
+
+        // --- 🧪 탕약 받기 미니게임 로직 (7가지 약재 & 10단계 순서) ---
+        const herbsData = [
+            { id: 1, name: '당귀', icon: '🌿' },
+            { id: 2, name: '감초', icon: '🌱' },
+            { id: 3, name: '인삼', icon: '🥕' },
+            { id: 4, name: '구기자', icon: '🍒' },
+            { id: 5, name: '하수오', icon: '🌾' },
+            { id: 6, name: '천궁', icon: '🍀' },
+            { id: 7, name: '독초', icon: '☠️' } // 함정
+        ];
+
+        // 요구하는 10단계 순서 (예시: 4, 5, 6, 2, 3, 1, 1, 1, 2, 2)
+        const requiredSequence = [4, 5, 6, 2, 3, 1, 1, 1, 2, 2];
+        let currentStepIndex = 0;
+        let collectedCount = 0;
+        let miniGameInterval = null;
+        let herbSpawnInterval = null;
+        let activeHerbs = [];
+
+        const minigameScreen = document.getElementById("minigame-screen");
+        const dropField = document.getElementById("drop-field");
+        const basketPlayer = document.getElementById("basket-player");
+        const targetOrderText = document.getElementById("target-order-text");
+        const scoreText = document.getElementById("score-text");
+
+        function startMedicineMiniGame() {
+            minigameScreen.style.display = "flex";
+            currentStepIndex = 0;
+            collectedCount = 0;
+            activeHerbs.forEach(h => h.element.remove());
+            activeHerbs = [];
+            updateMiniGameHUD();
+
+            // 게임 루프 시작 (약재 낙하 및 충돌 체크)
+            if (miniGameInterval) clearInterval(miniGameInterval);
+            if (herbSpawnInterval) clearInterval(herbSpawnInterval);
+
+            herbSpawnInterval = setInterval(spawnHerb, 900); // 일정 시간마다 약재 생성
+            miniGameInterval = setInterval(updateMiniGamePhysics, 30); // 프레임 단위 이동 및 판정
+        }
+
+        function updateMiniGameHUD() {
+            if (currentStepIndex < requiredSequence.length) {
+                let targetId = requiredSequence[currentStepIndex];
+                let targetObj = herbsData.find(h => h.id === targetId);
+                targetOrderText.innerText = `🎯 받아야 할 순서 [${currentStepIndex + 1}/10]: ${targetObj.icon} ${targetObj.name}`;
+            } else {
+                targetOrderText.innerText = `🎯 탕약 재료 수집 완료!`;
+            }
+            scoreText.innerText = `성공: ${collectedCount} / 10`;
+        }
+
+        // 바구니 좌우 이동 조작 (마우스 & 터치 대응)
+        dropField.addEventListener('pointermove', moveBasket);
+        dropField.addEventListener('pointerdown', moveBasket);
+
+        function moveBasket(e) {
+            let rect = dropField.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            // 필드 안에만 위치하도록 제한
+            if (x < 25) x = 25;
+            if (x > rect.width - 25) x = rect.width - 25;
+            basketPlayer.style.left = x + 'px';
+            basketPlayer.style.transform = "translateX(-50%)";
+        }
+
+        function spawnHerb() {
+            if (currentStepIndex >= requiredSequence.length) return;
+
+            // 7가지 중 랜덤 아이템 생성 (때로는 정답이 아닌 것도 섞여서 떨어짐)
+            let randomHerb = herbsData[Math.floor(Math.random() * herbsData.length)];
+            
+            let el = document.createElement("div");
+            el.className = "herb-item";
+            el.innerText = randomHerb.icon;
+            
+            let fieldWidth = dropField.clientWidth;
+            let randomX = Math.floor(Math.random() * (fieldWidth - 40)) + 20;
+            el.style.left = randomX + 'px';
+            el.style.top = "-30px";
+
+            dropField.appendChild(el);
+
+            activeHerbs.push({
+                id: randomHerb.id,
+                name: randomHerb.name,
+                y: -30,
+                x: randomX,
+                element: el
+            });
+        }
+
+        function updateMiniGamePhysics() {
+            let fieldHeight = dropField.clientHeight;
+            let basketRect = basketPlayer.getBoundingClientRect();
+            let fieldRect = dropField.getBoundingClientRect();
+            
+            // 바구니의 대략적인 X 중앙 좌표 계산
+            let basketCenterX = basketRect.left + (basketRect.width / 2) - fieldRect.left;
+
+            for (let i = activeHerbs.length - 1; i >= 0; i--) {
+                let h = activeHerbs[i];
+                h.y += 3.5; // 낙하 속도
+                h.element.style.top = h.y + 'px';
+
+                // 바구니 위치에 도달했을 때 충돌 판정 (바닥 부근)
+                if (h.y >= fieldHeight - 65 && h.y <= fieldHeight - 20) {
+                    if (Math.abs(h.x - basketCenterX) < 30) {
+                        // 바구니로 잡았다!
+                        handleHerbCatch(h);
+                        h.element.remove();
+                        activeHerbs.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                // 바닥으로 떨어져서 사라질 때
+                if (h.y > fieldHeight) {
+                    h.element.remove();
+                    activeHerbs.splice(i, 1);
+                }
+            }
+        }
+
+        function handleHerbCatch(herb) {
+            let expectedId = requiredSequence[currentStepIndex];
+
+            if (herb.id === expectedId) {
+                // 정확한 순서로 잡음!
+                currentStepIndex++;
+                collectedCount++;
+                updateMiniGameHUD();
+
+                if (currentStepIndex >= requiredSequence.length) {
+                    // 미니게임 클리어!
+                    endMiniGame(true);
+                }
+            } else {
+                // 순서가 틀렸거나 독초를 잡음!
+                setComment(`어라? ${herb.name}이(가) 아닌데! 💦`);
+                // 틀리면 잠시 경고 효과 후 재시작 또는 페널티
+                flashScreenRed();
+            }
+        }
+
+        function flashScreenRed() {
+            dropField.style.background = "radial-gradient(circle, #511 0%, #111 100%)";
+            setTimeout(() => {
+                dropField.style.background = "radial-gradient(circle, #252836 0%, #111 100%)";
+            }, 300);
+        }
+
+        function endMiniGame(isSuccess) {
+            clearInterval(miniGameInterval);
+            clearInterval(herbSpawnInterval);
+            activeHerbs.forEach(h => h.element.remove());
+            activeHerbs = [];
+            minigameScreen.style.display = "none";
+
+            if (isSuccess) {
+                setComment("완벽한 탕약 완성이다! 🍵");
+                dialogueBox.innerText = "🧪 약재를 순서대로 완벽하게 받아내어 최고급 탕약을 달였다!";
+                actionCount++;
+                renderDefaultControls();
+                checkDayProgress();
+            }
+        }
+
+        function checkDayProgress() {
+            if (actionCount >= 2) {
+                nightText.innerText = `DAY ${currentDay}의 관리를 마쳤습니다. 잠에 듭니다...`;
+                nightScreen.style.display = "flex";
+            }
+        }
+
+        function nextDay() {
+            nightScreen.style.display = "none";
+            currentDay++;
+            if (currentDay <= 3) {
+                initDay();
+            } else {
+                triggerEnding();
+            }
+        }
+
+        function triggerEnding() {
+            flowerObj.innerText = "🌺";
+            setComment("드디어 형님께 드릴 꽃이 피었다... 😊");
+            endingScreen.style.display = "flex";
+            endingText.innerHTML = `
+                <strong>궁원치의 비밀 화원 — COMPLETE</strong><br><br>
+                3일간 정성껏 키운 꽃이 만개했다!<br>
+                궁원치는 미소를 지으며 꽃을 꺾어 들고 형님에게 향한다.
+            `;
+        }
+
+        function resetGame() {
+            currentDay = 1;
+            endingScreen.style.display = "none";
+            initDay();
+        }
+    </script>
 </body>
 </html>
