@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>궁원치의 비밀 화원 — 형님을 위한 3일 간의 꽃 키우기</title>
+    
+    <script>
+        /* ==========================================================
+         * Copyright © 2026 모카크림의밤산책. All rights reserved.
+         * Fan-made Archive Project - Protected Version
+         * ========================================================== */
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', event => {
+            if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key === 'I')) {
+                event.preventDefault();
+            }
+        });
+    </script>
+
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #111; color: white; text-align: center; margin: 0; overflow: hidden; touch-action: none; }
+        h1 { margin: 10px 0; font-size: 17px; color: #ff79c6; }
+        
+        #game-container { 
+            position: relative; width: 90vw; max-width: 400px; height: 72vh; 
+            background-color: #1a1a1a; margin: 0 auto 10px auto; border: 3px solid #444; border-radius: 12px; overflow: hidden; 
+            display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 15px; box-sizing: border-box;
+            background-size: cover; background-position: center;
+        }
+
+        #day-indicator { font-size: 16px; font-weight: bold; color: #f1c40f; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; }
+        
+        /* 꽃이 표시되는 메인 시각 영역 */
+        #flower-display { font-size: 70px; margin: 20px 0; transition: transform 0.3s; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
+        #dialogue-box { 
+            width: 100%; background: rgba(0,0,0,0.75); border: 2px solid #555; border-radius: 8px; 
+            padding: 10px; font-size: 13px; line-height: 1.4; min-height: 45px; box-sizing: border-box; color: #ddd;
+        }
+
+        /* 액션 버튼 영역 */
+        #action-panel { display: flex; gap: 8px; width: 100%; justify-content: center; flex-wrap: wrap; margin-bottom: 5px; }
+        .game-btn { 
+            padding: 10px 14px; font-size: 13px; cursor: pointer; background: #2980b9; color: white; 
+            border: none; border-radius: 8px; font-weight: bold; flex: 1; min-width: 80px;
+        }
+        .game-btn:active { background: #1f618d; }
+        .danger-btn { background: #c0392b; }
+        .danger-btn:active { background: #962d22; }
+
+        #watermark { position: absolute; bottom: 5px; right: 8px; color: rgba(255, 255, 255, 0.4); font-size: 10px; pointer-events: none; }
+
+        .screen-overlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.88);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 30; padding: 20px; box-sizing: border-box;
+        }
+        .screen-overlay h2 { font-size: 22px; color: #f39c12; margin-bottom: 10px; }
+        .screen-overlay p { font-size: 13px; line-height: 1.5; color: #ccc; margin-bottom: 20px; }
+        .start-btn { padding: 12px 35px; font-size: 16px; background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .copyright-text { margin-top: 15px; font-size: 10px; color: rgba(255, 255, 255, 0.4); }
+    </style>
+</head>
+<body>
+    <h1>🌿 궁원치의 비밀 화원 🌿</h1>
+
+    <div id="game-container">
+        <!-- 상단 날짜 표시 -->
+        <div id="day-indicator">DAY 1 / 3</div>
+
+        <!-- 중앙 꽃 비주얼 -->
+        <div id="flower-display">🌱</div>
+
+        <!-- 궁원치 대사 및 상태창 -->
+        <div id="dialogue-box">
+            씨앗을 심었다. 아직은 어떤 모양인지 알 수 없다...
+        </div>
+
+        <!-- 하단 조작 버튼 패널 -->
+        <div id="action-panel" id="controls">
+            <button class="game-btn" onclick="doAction('water')">💧 물 주기</button>
+            <button class="game-btn" onclick="doAction('sun')">☀️ 햇빛 주기</button>
+            <button class="game-btn" onclick="openMedicineMenu()">🧪 탕약 만들기</button>
+        </div>
+
+        <div id="watermark">모카크림의 밤산책</div>
+
+        <!-- 시작 화면 오버레이 -->
+        <div id="start-screen" class="screen-overlay">
+            <h2>궁원치의 비밀 화원</h2>
+            <p>엘리트이지만 지독한 허당 궁원치.<br>형님에게 선물할 최고의 꽃을 피우기 위해<br>정성(?)을 다하는 3일 간의 기록!</p>
+            <button class="start-btn" onclick="startGame()">비밀 화원 입장하기</button>
+            <div class="copyright-text">© 2026 모카크림의밤산책. Fan-made project.</div>
+        </div>
+
+        <!-- 밤 넘어가기 오버레이 -->
+        <div id="night-screen" class="screen-overlay" style="display: none;">
+            <h2>🌙 밤이 깊어졌습니다...</h2>
+            <p id="night-text">오늘 하루의 관리를 마치고 잠에 듭니다.</p>
+            <button class="start-btn" onclick="nextDay()">다음 날 아침으로</button>
+        </div>
+
+        <!-- 엔딩 화면 오버레이 -->
+        <div id="ending-screen" class="screen-overlay" style="display: none;">
+            <h2>🌺 COMPLETE 🌺</h2>
+            <p id="ending-text">꽃이 활짝 피었다. 궁원치는 가만히 꽃을 바라보다 살짝 웃으며 꺾어 들고 형님에게 향한다...</p>
+            <button class="start-btn" onclick="resetGame()">처음부터 다시 하기</button>
+        </div>
+    </div>
+
+    <!-- 외부 게임 로직 파일 연결 -->
+    <script src="game.js"></script>
+</body>
+</html>
